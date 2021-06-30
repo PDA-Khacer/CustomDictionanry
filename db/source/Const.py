@@ -1,0 +1,2 @@
+TABLE_NAME = "TableName"
+MAX_RECORDS = 100000
