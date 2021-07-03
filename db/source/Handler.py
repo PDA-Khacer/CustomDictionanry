@@ -1,8 +1,10 @@
 import os
+import json
 
 from db.source.Const import TABLE_NAME
 from db.source.Const import MAX_RECORDS
 from db.source.Const import HIGH_MODE
+from db.source.Const import IS_HASH
 
 
 class DBHandler:
@@ -49,8 +51,15 @@ class DBHandler:
         try:
             f = open('db/data/'+nameFile, 'a')
             del nameFile
-            f.write(self.__hash(
-                "<" + str(self.__allTable[table] + 1) + "@" + str(key) + ":" + str(data) + ">"))
+            if IS_HASH == 1:
+                # f.write(self.__hash(
+                #     "<" + str(self.__allTable[table] + 1) + "@" + str(key) + ":" + str(data) + ">"))
+                f.write(self.__hash(self.itemToString(
+                    str(self.__allTable[table] + 1), str(key), data)))
+            else:
+                # f.write("<" + str(self.__allTable[table] + 1) + "@" + str(key) + ":" + str(data) + ">")
+                f.write(self.itemToString(
+                    str(self.__allTable[table] + 1), str(key), data))
             self.__incTotalCount(table)
         except Exception as e:
             print(r'[ERR] Dir not exits')
@@ -91,11 +100,17 @@ class DBHandler:
             # TODO: use thread
             pass
         else:
-            oldValue = self.getItem(table, key)['value']
-            nameFile = table+"_"+str(self.__getNumberOfFile(self.__currentIndex))
-            # replace 
-            newData = "<{index}@{key}:{value}>".format(index=self.__currentIndex, key=key, value=value)
-            oldData = "<{index}@{key}:{value}>".format(index=self.__currentIndex, key=key, value=oldValue)
+            try:
+                oldValue = self.getItem(table, key)['value']
+            except Exception as e:
+                print(r'[ERR] Item not existed !')
+                print(r'[ERR] db\source\Handler.py line:98 ', e)
+                return False
+            nameFile = table+"_" + \
+                str(self.__getNumberOfFile(self.__currentIndex))
+            # replace
+            newData = self.itemToString(self.__currentIndex, key, value)
+            oldData = self.itemToString(self.__currentIndex, key, oldValue)
             newData = self.__readFile(nameFile).replace(oldData, newData)
             self.__reWriteFile(nameFile, newData)
         return True
@@ -105,13 +120,22 @@ class DBHandler:
             # TODO: use thread
             pass
         else:
-            oldValue = self.getItem(table, key)['value']
-            nameFile = table+"_"+str(self.__getNumberOfFile(self.__currentIndex))
-            oldData = "<{index}@{key}:{value}>".format(index=self.__currentIndex, key=key, value=oldValue)
+            try:
+                oldValue = self.getItem(table, key)['value']
+            except Exception as e:
+                print(r'[ERR] Item not existed !')
+                print(r'[ERR] db\source\Handler.py line:98 ', e)
+                return False
+            nameFile = table+"_" + \
+                str(self.__getNumberOfFile(self.__currentIndex))
+            oldData = self.itemToString(self.__currentIndex, key, oldValue)
             newData = self.__readFile(nameFile).replace(oldData, "")
             self.__reWriteFile(nameFile, newData)
             self.__descTotalCount(table)
         return True
+
+    def itemToString(self, index, key, value):
+        return '<{index}@{key}:{value}>'.format(index=index, key=key, value=json.dumps(value))
 
     # TODO: work with  multiple data
     # TODO: get page data
@@ -122,7 +146,7 @@ class DBHandler:
 
     # private method
 
-    def __readFileTables(self): 
+    def __readFileTables(self):
         try:
             f = open("db/data/" + TABLE_NAME, "r", encoding="utf-8")
             for line in f:
@@ -163,28 +187,49 @@ class DBHandler:
 
     def __hashData(self, index, key, value):
         re = ''
-        for item in "<{index}@{key}:{value}>".format(index=index, key=key, value=value):
+        for item in self.itemToString(index, key, value):
             re += str(ord(item)+1234)
         return re
 
     def __readFile(self, file):
         try:
             re = ""
-            with open('db/data/' + file, "rb") as f:
-                while (byte := f.read(4)):
-                    re += str(chr(int(byte)-1234))
-                f.close()
+            if IS_HASH == 1:
+                with open('db/data/' + file, "rb") as f:
+                    while (byte := f.read(4)):
+                        re += str(chr(int(byte)-1234))
+                    f.close()
+            else:
+                with open('db/data/' + file, "r") as f:
+                    for line in f:
+                        re += line
+                    f.close()
         except Exception as e:
             print(r'[ERR] File not exit')
+            print(r'[ERR] db\source\Handler.py line:195 ', e)
         return re
 
     def __reWriteFile(self, file, data):
         try:
             f = open('db/data/'+file, 'w')
-            f.write(self.__hash(data))
+            if IS_HASH == 1:
+                f.write(self.__hash(data))
+            else:
+                f.write(data)
         except Exception as e:
             print(r'[ERR] file not existed !')
             print(r'[ERR] db\source\Handler.py line:96 ', e)
+        finally:
+            f.close()
+
+    def __reWriteFileTable(self):
+        try:
+            f = open("db/data/" + TABLE_NAME, "w", encoding="utf-8")
+            for key in self.__allTable:
+                f.write(str(key) + ' : ' + str(self.__allTable[key]) + '\n')
+        except Exception as e:
+            print(r'[ERR] IO Exception')
+            print(r'[ERR] db\source\Handler.py line:27 ', e)
         finally:
             f.close()
 
@@ -206,7 +251,8 @@ class DBHandler:
                 s = i + 1
             if string[i] == ">":
                 value = string[s:i]
-                self.__cacheData[key] = dict(index=keyAndIndex[0], value=value)
+                self.__cacheData[key] = dict(
+                    index=keyAndIndex[0], value=json.loads(value))
                 flag = -1
                 s = i + 2
             i += 1
@@ -214,30 +260,39 @@ class DBHandler:
     def __incTotalCount(self, table):
         self.__readFileTables()
         self.__allTable[table] += 1
-        try:
-            f = open("db/data/" + TABLE_NAME, "w", encoding="utf-8")
-            for key in self.__allTable:
-                f.write(str(key) + ' : ' + str(self.__allTable[key]) + '\n')
-        except Exception as e:
-            print(r'[ERR] IO Exception')
-            print(r'[ERR] db\source\Handler.py line:27 ', e)
-        finally:
-            f.close()
+        self.__reWriteFileTable()
 
     def __descTotalCount(self, table):
         self.__readFileTables()
         self.__allTable[table] -= 1
-        try:
-            f = open("db/data/" + TABLE_NAME, "w", encoding="utf-8")
-            for key in self.__allTable:
-                f.write(str(key) + ' : ' + str(self.__allTable[key]) + '\n')
-        except Exception as e:
-            print(r'[ERR] IO Exception')
-            print(r'[ERR] db\source\Handler.py line:27 ', e)
-        finally:
-            f.close()
-    
+        self.__reWriteFileTable()
+
     def debugData(self, table):
         pass
-    
+
     # TODO: func re index table
+    def reIndex(self, table):
+        self.readTable(table)
+        allItem = dict(sorted(self.__cacheData.items(),
+                       key=lambda item: item[1]['index']))
+        stringData = ""
+        index = 1
+        for key, value in allItem.items():
+            value['index'] = index
+            allItem[key] = value
+            stringData += self.itemToString(index=index,
+                                            key=key, value=value['value'])
+            if index % MAX_RECORDS == 0:
+                print("rewrite file", table+"_"+str(int(index/MAX_RECORDS)))
+                self.__reWriteFile(
+                    table+"_"+str(int(index/MAX_RECORDS)), stringData)
+                stringData = ''
+            index += 1
+        index -= 1
+        if stringData != '':
+            print("stringData", stringData)
+            print("rewrite file", table+"_"+str(int(index/MAX_RECORDS) + 1))
+            self.__reWriteFile(
+                table+"_"+str(int(index/MAX_RECORDS) + 1), stringData)
+        self.__allTable[table] = index
+        self.__reWriteFileTable()
