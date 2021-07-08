@@ -11,7 +11,7 @@ class DBHandler:
     def __init__(self):
         self.__allTable = dict()
         self.__allFileData = []
-        self.__cacheData = dict()
+        self.__cacheData = dict() 
         self.__keyData = []
         self.__tableCache = ""
         self.__currentIndex = -1
@@ -137,7 +137,7 @@ class DBHandler:
     def itemToString(self, index, key, value):
         return '<{index}@{key}:{value}>'.format(index=index, key=key, value=json.dumps(value))
 
-    # TODO: work with  multiple data
+    # TODO: work with multiple data
     # TODO: get page data
     # TODO: clear all data
     # TODO: backup
@@ -270,7 +270,6 @@ class DBHandler:
     def debugData(self, table):
         pass
 
-    # TODO: func re index table
     def reIndex(self, table):
         self.readTable(table)
         allItem = dict(sorted(self.__cacheData.items(),

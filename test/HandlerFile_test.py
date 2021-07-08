@@ -1,5 +1,6 @@
 import json
 import sys
+from datetime import datetime
 
 sys.path.insert(1, '.')
 
@@ -10,9 +11,9 @@ print(DBHandler().selectFile("topic"))
 dbIns = DBHandler()
 
 # ============================ push item
-item = dict(name="nnn", c="nnn")
+item = dict(Name="develop", CreateAt=str(datetime.now()), CreateBy='admin')
 # print(json.dumps(item))
-# dbIns.writeItem("topic", "3", item)
+# dbIns.writeItem("topic", "1", item)
 # dbIns.writeItem("topic", "5", item)
 # dbIns.writeItem("topic", "6", item)
 

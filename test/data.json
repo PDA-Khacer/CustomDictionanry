@@ -1,0 +1,65 @@
+{
+    'error': {
+        'statusCode': 422,
+        'name': 'UnprocessableEntityError',
+        'message': 'The request body is invalid. See error object `details` property for more info.',
+        'code': 'VALIDATION_FAILED',
+        'details': [{
+                'path': '/0/botUserId',
+                'code': 'type',
+                'message': 'should be number',
+                'info': {
+                    'type': 'number'
+                }
+            },
+            {
+                'path': '/1/botUserId',
+                'code': 'type',
+                'message': 'should be number',
+                'info': {
+                    'type': 'number'
+                }
+            },
+            {
+                'path': '/2/botUserId',
+                'code': 'type',
+                'message': 'should be number',
+                'info': {
+                    'type': 'number'
+                }
+            },
+            {
+                'path': '/3/botUserId',
+                'code': 'type',
+                'message': 'should be number',
+                'info': {
+                    'type': 'number'
+                }
+            },
+            {
+                'path': '/4/botUserId',
+                'code': 'type',
+                'message': 'should be number',
+                'info': {
+                    'type': 'number'
+                }
+            },
+            {
+                'path': '/5/botUserId',
+                'code': 'type',
+                'message': 'should be number',
+                'info': {
+                    'type': 'number'
+                }
+            },
+            {
+                'path': '/6/botUserId',
+                'code': 'type',
+                'message': 'should be number',
+                'info': {
+                    'type': 'number'
+                }
+            }
+        ]
+    }
+}
