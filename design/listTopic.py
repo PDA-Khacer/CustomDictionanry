@@ -43,8 +43,8 @@ class GUIListTopic:
         self._detail = Text(self._container, height=30, width=50, )
         self._scroll_detail_text = Scrollbar(self._container, command=self._detail.yview)
         self._detail.configure(yscrollcommand=self._scroll_detail_text.set)
-        self._detail.grid(column=, row=)
-        self._scroll_detail_text.grid(column=, row=)
+        self._detail.grid(column=len(nameTable)+1, row=self._beginRow+2)
+        self._scroll_detail_text.grid(column=len(nameTable)+2, row=self._beginRow+2)
         # content table
         self.ReloadData()
         
