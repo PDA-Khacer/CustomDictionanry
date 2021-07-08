@@ -1,6 +1,8 @@
 from tkinter import *
 from tkinter import messagebox as mb
 from datetime import datetime
+import _thread
+import time
 
 from db.source import Handler as DB
 
@@ -20,7 +22,6 @@ class GUIListTopic:
         self._container.grid(sticky=NS, columnspan=6) 
     
         self._string_topic = "All Topic"
-        widthFooter = 0
         for i in range(len(nameTable)+2):
             # self.e = Entry(self._mainWindow, width=20, fg='black',font=('Arial', 14, 'bold'))
             e = Label(self._container, text=' ',bg="white")
@@ -40,18 +41,18 @@ class GUIListTopic:
             self.e.grid(row=self._beginRow+2, column=i+1, columnspan=1,padx=0,sticky=NW)
             self.e.insert(END, nameTable[i])
             self.e.config(state="readonly")
-        self._detail = Text(self._container, height=30, width=50, )
+        self._detail = Text(self._container, height=20, width=50)
         self._scroll_detail_text = Scrollbar(self._container, command=self._detail.yview)
         self._detail.configure(yscrollcommand=self._scroll_detail_text.set)
-        self._detail.grid(column=len(nameTable)+1, row=self._beginRow+2)
-        self._scroll_detail_text.grid(column=len(nameTable)+2, row=self._beginRow+2)
+        self._detail.grid(column=len(nameTable)+2, row=self._beginRow+3)
+        self._scroll_detail_text.grid(column=len(nameTable)+3, row=self._beginRow+3, sticky='ns')
         # content table
         self.ReloadData()
         
         # footer
         widthFooter = sum([self._Entries[0][j].winfo_width() for j in range(0, 4)]) + self._vsb.winfo_width()
-        self._canvas_footer = Canvas(self._container, bg='lightgray', height = 30, width= widthFooter)
-        self._canvas_footer.grid(row=self._beginRow+5, column=0, columnspan=6, sticky=N, padx=0, pady=0)
+        self._canvas_footer = Canvas(self._container, bg='lightgray', height = 30, width= widthFooter+400)
+        self._canvas_footer.grid(row=self._beginRow+5, column=0, columnspan=11, sticky=N, padx=0, pady=0)
         self._frame_footer = Frame(self._canvas_footer, bg="lightgray")
         # self._frame_footer.grid(columnspan=5)
         
@@ -84,6 +85,7 @@ class GUIListTopic:
         self._btn_edit.grid(row=1,column=10)
         self._btn_refresh.grid(row=1,column=11)
         self._frame_footer.update_idletasks()
+        _thread.start_new_thread(self.LoadTime, ())
     
     def FrameWithScroll(self):  
         self._canvas = Canvas(self._container, bg="yellow")
@@ -111,6 +113,11 @@ class GUIListTopic:
         first5columns_width = sum([self._Entries[0][j].winfo_width() for j in range(0, 4)])
         first5rows_height = self._Entries[0][0].winfo_height() * MAX_ROW_ONE_VIEW
         self._canvas.config(width=first5columns_width,height=first5rows_height)
+
+    def LoadTime(self):
+        while True:
+            time.sleep(1)
+            self._label_now.config(text=datetime.now().strftime("%d/%m/%Y, %H:%M:%S"))
         
     def ReloadData(self):
         keyData = ["No.", "Name", "CreateAt", "CreateBy"]
