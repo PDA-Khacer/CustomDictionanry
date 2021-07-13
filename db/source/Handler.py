@@ -13,6 +13,7 @@ class DBHandler:
         self.__allFileData = []
         self.__cacheData = dict() 
         self.__keyData = []
+        self.__keyIndex = dict() # map[int]string
         self.__tableCache = ""
         self.__currentIndex = -1
         self.__mode = 0
@@ -135,7 +136,64 @@ class DBHandler:
         return True
 
     def itemToString(self, index, key, value):
-        return '<{index}@{key}:{value}>'.format(index=index, key=key, value=json.dumps(value))
+        return '<{index}@{key}:{value}>'.format(index=index, key=str(key), value=json.dumps(value))
+
+    def getItemByIndex(self, table, index):
+        """ Get item in table with index """
+        if HIGH_MODE == self.__mode:
+            # TODO: use thread
+            pass
+        else:
+            self.readTable(table)
+            try:
+                key = self.__keyIndex[index]
+                return self.__cacheData[key]
+            except Exception as e:
+                print(r'[ERR] no item in dict')
+                return None
+
+    def updateItemByIndex(self, table, index, value):
+        if value == None:
+            value = "{}"
+        if HIGH_MODE == self.__mode:
+            # TODO: use thread
+            pass
+        else:
+            try:
+                oldValue = self.getItemByIndex(table, index)['value']
+                key = self.__keyIndex[index]
+            except Exception as e:
+                print(r'[ERR] Item not existed !')
+                print(r'[ERR] db\source\Handler.py line:98 ', e)
+                return False
+            nameFile = table+"_" + \
+                str(self.__getNumberOfFile(self.__currentIndex))
+            # replace
+            newData = self.itemToString(self.__currentIndex, key, value)
+            oldData = self.itemToString(self.__currentIndex, key, oldValue)
+            newData = self.__readFile(nameFile).replace(oldData, newData)
+            self.__reWriteFile(nameFile, newData)
+        return True
+
+    def deleteitemByIndex(self, table, index):
+        if HIGH_MODE == self.__mode:
+            # TODO: use thread
+            pass
+        else:
+            try:
+                oldValue = self.getItemByIndex(table, index)['value']
+                key = self.__keyIndex[index]
+            except Exception as e:
+                print(r'[ERR] Item not existed !')
+                print(r'[ERR] db\source\Handler.py line:98 ', e)
+                return False
+            nameFile = table+"_" + \
+                str(self.__getNumberOfFile(self.__currentIndex))
+            oldData = self.itemToString(self.__currentIndex, key, oldValue)
+            newData = self.__readFile(nameFile).replace(oldData, "")
+            self.__reWriteFile(nameFile, newData)
+            self.__descTotalCount(table)
+        return True
 
     # TODO: work with multiple data
     # TODO: get page data
@@ -247,6 +305,7 @@ class DBHandler:
                 key = keyAndIndex[1]
                 self.__currentIndex = int(keyAndIndex[0])
                 self.__keyData.append(key)
+                self.__keyIndex[int(keyAndIndex[0])]= key
                 flag = 1
                 s = i + 1
             if string[i] == ">":
